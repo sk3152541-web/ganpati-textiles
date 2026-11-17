@@ -4,8 +4,6 @@ import openpyxl
 import time
 import datetime
 import webbrowser
-import pyautogui
-import pyperclip
 import subprocess
 import re
 import copy
@@ -17,6 +15,19 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
+
+# Safe import for pyautogui (Cloud/Render par crash hone se bachane ke liye)
+try:
+    import pyautogui
+    PYAUTOGUI_AVAILABLE = True
+except ImportError:
+    PYAUTOGUI_AVAILABLE = False
+
+try:
+    import pyperclip
+    PYCLIPBOARD_AVAILABLE = True
+except ImportError:
+    PYCLIPBOARD_AVAILABLE = False
 
 DATA_FILE = "app_data.json"
 PARTIES_FILE = "parties_master.json"
@@ -223,11 +234,9 @@ class GanpatiSyncDashboard:
         title_lbl = tk.Label(root, text="Ganpati Textiles - Independent Dashboard with Multi-Status Filtering, Sorting & Live Remark Preview", font=("Arial", 13, "bold"), bg="#1f4e78", fg="white", pady=6)
         title_lbl.pack(fill=tk.X)
 
-        # Main Toolbar Frame
         btn_frame = tk.Frame(root, bg="#f4f4f4", pady=4)
         btn_frame.pack(fill=tk.X, padx=10)
 
-        # Row 1: Action Buttons & WhatsApp Button
         row1 = tk.Frame(btn_frame, bg="#f4f4f4")
         row1.pack(fill=tk.X, pady=2)
 
@@ -247,7 +256,6 @@ class GanpatiSyncDashboard:
         tk.Button(row1, text="↪ Redo", command=self.redo_action, bg="#78909C", fg="white", font=("Arial", 8, "bold"), padx=3, pady=2).pack(side=tk.LEFT, padx=1)
         tk.Button(row1, text="🚀 WhatsApp", command=self.send_whatsapp_messages, bg="#2E7D32", fg="white", font=("Arial", 8, "bold"), padx=4, pady=2).pack(side=tk.LEFT, padx=6)
 
-        # Row 2: Status Filters & Search Box
         row2 = tk.Frame(btn_frame, bg="#f4f4f4")
         row2.pack(fill=tk.X, pady=2)
 
@@ -745,13 +753,13 @@ class GanpatiSyncDashboard:
         for idx, (label_text, default_val) in enumerate(fields):
             tk.Label(mod_win, text=label_text, bg="#f4f4f4", font=("Arial", 9)).pack(anchor="w", padx=20)
             
-            if idx == 2:  # Party Name Field as Autocomplete Combobox
+            if idx == 2:
                 widget = AutocompleteCombobox(mod_win, font=("Arial", 9), width=30)
                 widget.set_completion_list(self.get_master_parties())
                 widget.pack(padx=20, pady=2)
                 widget.set(str(default_val or ""))
                 widgets.append(widget)
-            elif idx in (1, 5):  # Date fields with Calendar button
+            elif idx in (1, 5):
                 f_date = tk.Frame(mod_win, bg="#f4f4f4")
                 f_date.pack(padx=20, pady=2, anchor="w")
                 widget = tk.Entry(f_date, width=24, font=("Arial", 9))
@@ -878,13 +886,13 @@ class GanpatiSyncDashboard:
         for idx, (label_text, default_val) in enumerate(fields):
             tk.Label(add_win, text=label_text, bg="#f4f4f4", font=("Arial", 9)).pack(anchor="w", padx=20)
             
-            if idx == 2:  # Party Name Field as Autocomplete Combobox
+            if idx == 2:
                 widget = AutocompleteCombobox(add_win, font=("Arial", 9), width=30)
                 widget.set_completion_list(self.get_master_parties())
                 widget.pack(padx=20, pady=2)
                 widget.set(str(default_val))
                 widgets.append(widget)
-            elif idx in (1, 5):  # Date fields with Calendar button
+            elif idx in (1, 5):
                 f_date = tk.Frame(add_win, bg="#f4f4f4")
                 f_date.pack(padx=20, pady=2, anchor="w")
                 widget = tk.Entry(f_date, width=24, font=("Arial", 9))
@@ -963,6 +971,10 @@ class GanpatiSyncDashboard:
         tk.Button(add_win, text="Save Order", command=save_new, bg="#2E7D32", fg="white", font=("Arial", 9, "bold"), padx=10, pady=4).pack(pady=15)
 
     def send_whatsapp_messages(self):
+        if not PYAUTOGUI_AVAILABLE or not PYCLIPBOARD_AVAILABLE:
+            messagebox.showerror("Error", "PyAutoGUI ya Pyperclip is environment mein available nahi hai!")
+            return
+
         selected_items = self.get_selected_row_objects()
         if not selected_items:
             messagebox.showwarning("Warning", "Kripya kam se kam ek order select (☑) karein!")
